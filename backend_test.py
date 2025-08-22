@@ -261,6 +261,97 @@ class FestivalLightSyncTester:
 
         return True
 
+    def test_beat_synchronization_api(self):
+        """Test beat synchronization system"""
+        # Test beat data submission
+        beat_data = {
+            "bpm": 128.5,
+            "intensity": 0.85,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        try:
+            response = requests.post(f"{BASE_URL}/beat-data", json=beat_data, timeout=10)
+            if response.status_code == 200:
+                result = response.json()
+                self.log_test("Beat Data Submission", True, 
+                            f"Beat data received: {result.get('bpm')} BPM")
+            else:
+                self.log_test("Beat Data Submission", False, 
+                            f"HTTP {response.status_code}: {response.text}")
+                return False
+        except Exception as e:
+            self.log_test("Beat Data Submission", False, f"Error: {str(e)}")
+            return False
+
+        # Test latest beat retrieval
+        try:
+            response = requests.get(f"{BASE_URL}/latest-beat", timeout=10)
+            if response.status_code == 200:
+                result = response.json()
+                beat = result.get('beat')
+                if beat and beat.get('bpm') == beat_data['bpm']:
+                    self.log_test("Latest Beat Retrieval", True, 
+                                f"Retrieved beat: {beat.get('bpm')} BPM, intensity: {beat.get('intensity')}")
+                else:
+                    self.log_test("Latest Beat Retrieval", False, 
+                                f"Beat data mismatch or not found: {beat}")
+                    return False
+            else:
+                self.log_test("Latest Beat Retrieval", False, 
+                            f"HTTP {response.status_code}: {response.text}")
+                return False
+        except Exception as e:
+            self.log_test("Latest Beat Retrieval", False, f"Error: {str(e)}")
+            return False
+
+        return True
+
+    def test_preset_patterns(self):
+        """Test preset light patterns"""
+        presets = ["party_mode", "calm_wave", "festival_finale"]
+        
+        for preset in presets:
+            try:
+                response = requests.post(f"{BASE_URL}/preset/{preset}", timeout=10)
+                if response.status_code == 200:
+                    result = response.json()
+                    section_stats = result.get('section_stats', {})
+                    self.log_test(f"Preset Pattern: {preset}", True, 
+                                f"Preset activated, stats: {section_stats}")
+                    time.sleep(1)  # Brief pause between presets
+                else:
+                    self.log_test(f"Preset Pattern: {preset}", False, 
+                                f"HTTP {response.status_code}: {response.text}")
+                    return False
+            except Exception as e:
+                self.log_test(f"Preset Pattern: {preset}", False, f"Error: {str(e)}")
+                return False
+
+        return True
+
+    def test_section_join_api(self):
+        """Test section join functionality"""
+        sections = ["left", "center", "right"]
+        
+        for section in sections:
+            try:
+                section_data = {"section": section}
+                response = requests.post(f"{BASE_URL}/join-section", json=section_data, timeout=10)
+                if response.status_code == 200:
+                    result = response.json()
+                    self.log_test(f"Section Join: {section}", True, 
+                                f"Join message: {result.get('message')}")
+                else:
+                    self.log_test(f"Section Join: {section}", False, 
+                                f"HTTP {response.status_code}: {response.text}")
+                    return False
+            except Exception as e:
+                self.log_test(f"Section Join: {section}", False, f"Error: {str(e)}")
+                return False
+
+        return True
+
     async def test_participant_websocket(self):
         """Test participant WebSocket connection"""
         try:
