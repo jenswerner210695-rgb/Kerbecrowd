@@ -60,16 +60,23 @@ class FestivalLightSyncTester:
             return False
 
     def test_stats_api(self):
-        """Test statistics API endpoint"""
+        """Test statistics API endpoint with section support"""
         try:
             response = requests.get(f"{BASE_URL}/stats", timeout=10)
             if response.status_code == 200:
                 data = response.json()
-                required_fields = ['participants', 'admins', 'total_connections']
+                required_fields = ['sections', 'admins', 'total_connections']
                 if all(field in data for field in required_fields):
-                    self.log_test("Statistics API", True, 
-                                f"Stats: {data['participants']} participants, {data['admins']} admins")
-                    return True
+                    sections = data.get('sections', {})
+                    required_sections = ['total', 'left', 'center', 'right']
+                    if all(section in sections for section in required_sections):
+                        self.log_test("Statistics API", True, 
+                                    f"Section stats: {sections['total']} total, {sections['left']} left, {sections['center']} center, {sections['right']} right, {data['admins']} admins")
+                        return True
+                    else:
+                        self.log_test("Statistics API", False, 
+                                    f"Missing section fields in response: {sections}")
+                        return False
                 else:
                     self.log_test("Statistics API", False, 
                                 f"Missing required fields in response: {data}")
