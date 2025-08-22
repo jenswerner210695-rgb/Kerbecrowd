@@ -107,51 +107,63 @@ user_problem_statement: "Build a crowd-engagement app for small city festivals (
 backend:
   - task: "WebSocket real-time communication"
     implemented: true
-    working: "NA"  # needs testing
+    working: false
     file: "/app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "WebSocket endpoints implemented for participant and admin connections with ConnectionManager class"
+      - working: false
+        agent: "testing"
+        comment: "WebSocket connections failing with 'timed out during opening handshake' error. Backend code is correct but Kubernetes ingress not configured for WebSocket upgrade. Infrastructure issue requiring ingress annotations for WebSocket support."
 
   - task: "Light command API endpoints"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "POST /api/light-command endpoint implemented to send commands to all participants"
+      - working: true
+        agent: "testing"
+        comment: "All light command API endpoints working perfectly. Tested 5 different effects (solid, pulse, strobe, rainbow, fade) with realistic festival colors. Commands stored in MongoDB and API responses correct."
 
   - task: "Event management system"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "CRUD endpoints for festival events with activation system"
+      - working: true
+        agent: "testing"
+        comment: "All event management APIs working correctly. Successfully tested: POST /api/events (create), GET /api/events (list), GET /api/events/active (get active), POST /api/events/{id}/activate (activate). Event creation, listing, activation, and retrieval all functional."
 
   - task: "Statistics API"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "low"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "GET /api/stats endpoint for participant count and connection stats"
+      - working: true
+        agent: "testing"
+        comment: "Statistics API working correctly. Returns proper JSON with participants, admins, and total_connections fields. Connection tracking would work once WebSocket infrastructure is fixed."
 
 frontend:
   - task: "Participant light screen with WebSocket"
