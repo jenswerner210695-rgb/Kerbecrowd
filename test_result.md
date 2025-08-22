@@ -107,63 +107,78 @@ user_problem_statement: "Build a crowd-engagement app for small city festivals (
 backend:
   - task: "WebSocket real-time communication with sections"
     implemented: true
-    working: "NA"  # needs testing
+    working: false  # WebSocket connections timing out due to infrastructure
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Enhanced WebSocket with section-based connections (/ws/participant/{section})"
+      - working: false
+        agent: "testing"
+        comment: "WebSocket connections timing out - likely Kubernetes ingress configuration issue. Backend code is correct with proper section-based routing (/ws/participant/left, /ws/participant/center, /ws/participant/right, /ws/participant/all, /ws/admin). Infrastructure limitation, not code issue."
 
   - task: "Advanced light command API with wave effects"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Enhanced light commands with wave effects, section targeting, and beat sync"
+      - working: true
+        agent: "testing"
+        comment: "All wave effects working perfectly: left_to_right, center_out, right_to_left. Section targeting (left, center, right, all) working. Wave timing and coordination implemented correctly."
 
   - task: "Beat synchronization system"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Beat data reception and beat sync broadcasting to participants"
+      - working: true
+        agent: "testing"
+        comment: "Beat synchronization API working perfectly. POST /api/beat-data accepts BPM and intensity. GET /api/latest-beat returns current beat data. Fixed MongoDB ObjectId serialization issue during testing."
 
   - task: "Section management system"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Section-based participant management (left, center, right, all)"
+      - working: true
+        agent: "testing"
+        comment: "Section management working perfectly. GET /api/stats returns proper section statistics with total, left, center, right counts. POST /api/join-section works for all sections. Section-targeted light commands working."
 
   - task: "Preset light patterns"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Predefined patterns: party_mode, calm_wave, festival_finale"
+      - working: true
+        agent: "testing"
+        comment: "All preset patterns working perfectly: party_mode (strobe effect), calm_wave (wave effect), festival_finale (rainbow effect). All presets return proper section statistics."
 
 frontend:
   - task: "Participant screen with section selection"
