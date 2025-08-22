@@ -602,30 +602,45 @@ class FestivalLightSyncTester:
 
     async def run_all_tests(self):
         """Run all backend tests"""
-        print("🎪 Festival Light Sync Backend Testing Suite")
-        print("=" * 50)
+        print("🎪 Festival Light Sync Backend Testing Suite - Phase 2")
+        print("=" * 60)
         print()
         
         # Basic API tests
         print("📡 Testing Basic API Connectivity...")
         api_working = self.test_api_root()
         
-        print("📊 Testing Statistics API...")
+        print("📊 Testing Statistics API with Section Support...")
         stats_working = self.test_stats_api()
         
         print("🎭 Testing Event Management...")
         events_working = self.test_event_management()
         
-        print("💡 Testing Light Command API...")
+        print("💡 Testing Advanced Light Command API...")
         light_api_working = self.test_light_command_api()
+        
+        print("🎵 Testing Beat Synchronization API...")
+        beat_api_working = self.test_beat_synchronization_api()
+        
+        print("🎨 Testing Preset Patterns...")
+        preset_working = self.test_preset_patterns()
+        
+        print("📍 Testing Section Join API...")
+        section_join_working = self.test_section_join_api()
         
         # WebSocket tests
         print("🔌 Testing WebSocket Connections...")
         participant_ws_working = await self.test_participant_websocket()
         admin_ws_working = await self.test_admin_websocket()
         
+        print("📍 Testing Section-based WebSocket Connections...")
+        section_ws_working = await self.test_section_websocket_connections()
+        
         print("📡 Testing WebSocket Broadcasting...")
         broadcast_working = await self.test_websocket_light_command_broadcast()
+        
+        print("🎵 Testing Beat Sync WebSocket...")
+        beat_sync_ws_working = await self.test_beat_sync_websocket()
         
         print("👥 Testing Connection Tracking...")
         tracking_working = await self.test_websocket_connection_tracking()
@@ -634,9 +649,9 @@ class FestivalLightSyncTester:
         await self.cleanup_websockets()
         
         # Summary
-        print("\n" + "=" * 50)
+        print("\n" + "=" * 60)
         print("🎯 TEST SUMMARY")
-        print("=" * 50)
+        print("=" * 60)
         
         total_tests = len(self.test_results)
         passed_tests = sum(1 for result in self.test_results if result['success'])
@@ -667,6 +682,21 @@ class FestivalLightSyncTester:
         light_success = all(r['success'] for r in light_tests)
         print(f"{'✅' if light_success else '❌'} Light Command API: {'WORKING' if light_success else 'ISSUES FOUND'}")
         
+        # Beat Synchronization
+        beat_tests = [r for r in self.test_results if 'Beat' in r['test']]
+        beat_success = all(r['success'] for r in beat_tests)
+        print(f"{'✅' if beat_success else '❌'} Beat Synchronization: {'WORKING' if beat_success else 'ISSUES FOUND'}")
+        
+        # Section Management
+        section_tests = [r for r in self.test_results if 'Section' in r['test']]
+        section_success = all(r['success'] for r in section_tests)
+        print(f"{'✅' if section_success else '❌'} Section Management: {'WORKING' if section_success else 'ISSUES FOUND'}")
+        
+        # Preset Patterns
+        preset_tests = [r for r in self.test_results if 'Preset' in r['test']]
+        preset_success = all(r['success'] for r in preset_tests)
+        print(f"{'✅' if preset_success else '❌'} Preset Patterns: {'WORKING' if preset_success else 'ISSUES FOUND'}")
+        
         # Event Management
         event_tests = [r for r in self.test_results if any(keyword in r['test'] for keyword in ['Event', 'Create', 'List', 'Activate'])]
         event_success = all(r['success'] for r in event_tests)
@@ -683,6 +713,9 @@ class FestivalLightSyncTester:
             'failed': failed_tests,
             'websocket_working': ws_success,
             'light_api_working': light_success,
+            'beat_sync_working': beat_success,
+            'section_management_working': section_success,
+            'preset_patterns_working': preset_success,
             'event_management_working': event_success,
             'statistics_working': stats_success,
             'overall_success': failed_tests == 0
