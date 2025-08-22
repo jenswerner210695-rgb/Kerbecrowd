@@ -254,9 +254,11 @@ async def receive_beat_data(beat_data: BeatData):
     
     beat_dict = beat_data.dict()
     beat_dict["timestamp"] = datetime.now(timezone.utc).isoformat()
-    latest_beat_data = beat_dict
     
-    # Store beat data
+    # Store clean data without MongoDB ObjectId for latest_beat_data
+    latest_beat_data = beat_dict.copy()
+    
+    # Store beat data in database
     await db.beat_data.insert_one(beat_dict)
     
     # Send beat sync command to all participants if enabled
