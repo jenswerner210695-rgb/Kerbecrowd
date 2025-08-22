@@ -170,7 +170,7 @@ class FestivalLightSyncTester:
         return True
 
     def test_light_command_api(self):
-        """Test light command API with different effects"""
+        """Test light command API with different effects and sections"""
         light_commands = [
             {
                 "command_type": "color",
@@ -187,7 +187,7 @@ class FestivalLightSyncTester:
                 "intensity": 0.8,
                 "speed": 1.5,
                 "duration": 5000,
-                "section": "all"
+                "section": "left"
             },
             {
                 "command_type": "effect",
@@ -196,7 +196,7 @@ class FestivalLightSyncTester:
                 "intensity": 1.0,
                 "speed": 2.0,
                 "duration": 3000,
-                "section": "all"
+                "section": "center"
             },
             {
                 "command_type": "effect",
@@ -205,16 +205,37 @@ class FestivalLightSyncTester:
                 "intensity": 0.9,
                 "speed": 0.8,
                 "duration": 10000,
-                "section": "all"
+                "section": "right"
             },
             {
                 "command_type": "effect",
                 "color": "#FFEAA7",  # Yellow
-                "effect": "fade",
+                "effect": "wave",
                 "intensity": 0.7,
                 "speed": 1.2,
                 "duration": 8000,
-                "section": "all"
+                "section": "all",
+                "wave_direction": "left_to_right"
+            },
+            {
+                "command_type": "effect",
+                "color": "#DDA0DD",  # Plum
+                "effect": "wave",
+                "intensity": 0.8,
+                "speed": 1.0,
+                "duration": 6000,
+                "section": "all",
+                "wave_direction": "center_out"
+            },
+            {
+                "command_type": "effect",
+                "color": "#FFB6C1",  # Light pink
+                "effect": "wave",
+                "intensity": 0.9,
+                "speed": 1.5,
+                "duration": 7000,
+                "section": "all",
+                "wave_direction": "right_to_left"
             }
         ]
 
@@ -223,9 +244,13 @@ class FestivalLightSyncTester:
                 response = requests.post(f"{BASE_URL}/light-command", json=command, timeout=10)
                 if response.status_code == 200:
                     result = response.json()
-                    self.log_test(f"Light Command {i+1} ({command['effect']})", True, 
-                                f"Command sent to {result.get('participant_count', 0)} participants")
-                    time.sleep(1)  # Brief pause between commands
+                    section_stats = result.get('section_stats', {})
+                    effect_desc = f"{command['effect']}"
+                    if command.get('wave_direction'):
+                        effect_desc += f" ({command['wave_direction']})"
+                    self.log_test(f"Light Command {i+1} ({effect_desc})", True, 
+                                f"Command sent to section '{command['section']}', stats: {section_stats}")
+                    time.sleep(0.5)  # Brief pause between commands
                 else:
                     self.log_test(f"Light Command {i+1} ({command['effect']})", False, 
                                 f"HTTP {response.status_code}: {response.text}")
