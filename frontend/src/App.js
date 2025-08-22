@@ -1,54 +1,434 @@
-import { useEffect } from "react";
-import "./App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
+import React, { useState, useEffect, useRef } from 'react';
+import './App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
+const WS_URL = BACKEND_URL.replace('http', 'ws');
 
-const Home = () => {
-  const helloWorldApi = async () => {
+// Participant Light Screen Component
+const ParticipantScreen = () => {
+  const [isConnected, setIsConnected] = useState(false);
+  const [currentColor, setCurrentColor] = useState('#3B82F6');
+  const [isActive, setIsActive] = useState(false);
+  const wsRef = useRef(null);
+  const animationRef = useRef(null);
+
+  useEffect(() => {
+    connectWebSocket();
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, []);
+
+  const connectWebSocket = () => {
     try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
+      wsRef.current = new WebSocket(`${WS_URL}/ws/participant`);
+      
+      wsRef.current.onopen = () => {
+        setIsConnected(true);
+        console.log('Connected to light sync system');
+      };
+      
+      wsRef.current.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        handleLightCommand(message);
+      };
+      
+      wsRef.current.onclose = () => {
+        setIsConnected(false);
+        console.log('Disconnected from light sync system');
+        // Reconnect after 3 seconds
+        setTimeout(connectWebSocket, 3000);
+      };
+      
+      wsRef.current.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        setIsConnected(false);
+      };
+    } catch (error) {
+      console.error('Failed to connect WebSocket:', error);
+      setTimeout(connectWebSocket, 3000);
     }
   };
 
-  useEffect(() => {
-    helloWorldApi();
-  }, []);
+  const handleLightCommand = (message) => {
+    if (message.type === 'light_command') {
+      const { command_type, color, effect, intensity, speed, duration } = message.data;
+      
+      setCurrentColor(color);
+      setIsActive(true);
+      
+      // Handle different effects
+      switch (effect) {
+        case 'pulse':
+          startPulseEffect(color, intensity, speed, duration);
+          break;
+        case 'strobe':
+          startStrobeEffect(color, intensity, speed, duration);
+          break;
+        case 'rainbow':
+          startRainbowEffect(intensity, speed, duration);
+          break;
+        case 'fade':
+          startFadeEffect(color, intensity, speed, duration);
+          break;
+        default:
+          // Solid color
+          setSolidColor(color, intensity, duration);
+      }
+    }
+  };
+
+  const setSolidColor = (color, intensity, duration) => {
+    const adjustedColor = adjustColorIntensity(color, intensity);
+    setCurrentColor(adjustedColor);
+    
+    if (duration) {
+      setTimeout(() => {
+        setIsActive(false);
+        setCurrentColor('#000000');
+      }, duration);
+    }
+  };
+
+  const startPulseEffect = (color, intensity, speed, duration) => {
+    let startTime = Date.now();
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      if (duration && elapsed > duration) {
+        setIsActive(false);
+        return;
+      }
+      
+      const pulseValue = (Math.sin(elapsed * speed * 0.01) + 1) / 2;
+      const adjustedColor = adjustColorIntensity(color, intensity * pulseValue);
+      setCurrentColor(adjustedColor);
+      
+      animationRef.current = requestAnimationFrame(animate);
+    };
+    animate();
+  };
+
+  const startStrobeEffect = (color, intensity, speed, duration) => {
+    let startTime = Date.now();
+    let isOn = true;
+    const strobeInterval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      if (duration && elapsed > duration) {
+        clearInterval(strobeInterval);
+        setIsActive(false);
+        return;
+      }
+      
+      isOn = !isOn;
+      setCurrentColor(isOn ? adjustColorIntensity(color, intensity) : '#000000');
+    }, 1000 / (speed * 10));
+  };
+
+  const startRainbowEffect = (intensity, speed, duration) => {
+    let startTime = Date.now();
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      if (duration && elapsed > duration) {
+        setIsActive(false);
+        return;
+      }
+      
+      const hue = (elapsed * speed * 0.1) % 360;
+      const color = `hsl(${hue}, 100%, 50%)`;
+      setCurrentColor(adjustColorIntensity(color, intensity));
+      
+      animationRef.current = requestAnimationFrame(animate);
+    };
+    animate();
+  };
+
+  const startFadeEffect = (targetColor, intensity, speed, duration) => {
+    let startTime = Date.now();
+    const startColor = currentColor;
+    
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / (1000 / speed), 1);
+      
+      if (progress >= 1 || (duration && elapsed > duration)) {
+        setCurrentColor(adjustColorIntensity(targetColor, intensity));
+        setIsActive(false);
+        return;
+      }
+      
+      // Interpolate between colors
+      const interpolatedColor = interpolateColors(startColor, targetColor, progress);
+      setCurrentColor(adjustColorIntensity(interpolatedColor, intensity));
+      
+      animationRef.current = requestAnimationFrame(animate);
+    };
+    animate();
+  };
+
+  const adjustColorIntensity = (color, intensity) => {
+    if (color.startsWith('#')) {
+      const r = parseInt(color.slice(1, 3), 16);
+      const g = parseInt(color.slice(3, 5), 16);
+      const b = parseInt(color.slice(5, 7), 16);
+      
+      return `rgb(${Math.round(r * intensity)}, ${Math.round(g * intensity)}, ${Math.round(b * intensity)})`;
+    }
+    return color;
+  };
+
+  const interpolateColors = (color1, color2, progress) => {
+    // Simple color interpolation
+    return color2; // Simplified for now
+  };
 
   return (
-    <div>
-      <header className="App-header">
-        <a
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
+    <div 
+      className="participant-screen"
+      style={{ backgroundColor: currentColor }}
+    >
+      <div className="connection-status">
+        <div className={`status-indicator ${isConnected ? 'connected' : 'disconnected'}`}>
+          {isConnected ? '🔗 Verbunden' : '❌ Getrennt'}
+        </div>
+        <div className="festival-info">
+          <h1>🎵 Festival Light Sync</h1>
+          <p>Halten Sie Ihr Handy hoch und lassen Sie es leuchten!</p>
+        </div>
+      </div>
     </div>
   );
 };
 
-function App() {
+// Admin Control Panel Component
+const AdminPanel = () => {
+  const [isConnected, setIsConnected] = useState(false);
+  const [participantCount, setParticipantCount] = useState(0);
+  const [selectedColor, setSelectedColor] = useState('#FF0000');
+  const [selectedEffect, setSelectedEffect] = useState('solid');
+  const [intensity, setIntensity] = useState(1.0);
+  const [speed, setSpeed] = useState(1.0);
+  const wsRef = useRef(null);
+
+  useEffect(() => {
+    connectWebSocket();
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
+  }, []);
+
+  const connectWebSocket = () => {
+    try {
+      wsRef.current = new WebSocket(`${WS_URL}/ws/admin`);
+      
+      wsRef.current.onopen = () => {
+        setIsConnected(true);
+        console.log('Admin connected to control system');
+      };
+      
+      wsRef.current.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        if (message.type === 'participant_update' || message.type === 'initial_stats') {
+          setParticipantCount(message.participant_count);
+        }
+      };
+      
+      wsRef.current.onclose = () => {
+        setIsConnected(false);
+        setTimeout(connectWebSocket, 3000);
+      };
+    } catch (error) {
+      console.error('Admin WebSocket connection failed:', error);
+      setTimeout(connectWebSocket, 3000);
+    }
+  };
+
+  const sendLightCommand = (overrideEffect = null) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+
+    const command = {
+      type: 'light_command',
+      data: {
+        command_type: 'effect',
+        color: selectedColor,
+        effect: overrideEffect || selectedEffect,
+        intensity: intensity,
+        speed: speed,
+        duration: selectedEffect === 'solid' ? null : 5000,
+        section: 'all'
+      }
+    };
+
+    wsRef.current.send(JSON.stringify(command));
+  };
+
+  const presetColors = [
+    { name: 'Rot', color: '#FF0000' },
+    { name: 'Grün', color: '#00FF00' },
+    { name: 'Blau', color: '#0000FF' },
+    { name: 'Gelb', color: '#FFFF00' },
+    { name: 'Magenta', color: '#FF00FF' },
+    { name: 'Cyan', color: '#00FFFF' },
+    { name: 'Weiß', color: '#FFFFFF' },
+    { name: 'Orange', color: '#FFA500' }
+  ];
+
   return (
-    <div className="App">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+    <div className="admin-panel">
+      <div className="admin-header">
+        <h1>🎛️ Festival Light Control</h1>
+        <div className="connection-info">
+          <span className={`admin-status ${isConnected ? 'connected' : 'disconnected'}`}>
+            {isConnected ? '✅ Verbunden' : '❌ Getrennt'}
+          </span>
+          <span className="participant-count">
+            👥 {participantCount} Teilnehmer
+          </span>
+        </div>
+      </div>
+
+      <div className="control-sections">
+        {/* Quick Color Presets */}
+        <div className="control-section">
+          <h3>Schnell-Farben</h3>
+          <div className="color-presets">
+            {presetColors.map((preset) => (
+              <button
+                key={preset.name}
+                className="color-preset-btn"
+                style={{ backgroundColor: preset.color }}
+                onClick={() => {
+                  setSelectedColor(preset.color);
+                  sendLightCommand('solid');
+                }}
+                title={preset.name}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Custom Controls */}
+        <div className="control-section">
+          <h3>Benutzerdefinierte Steuerung</h3>
+          <div className="custom-controls">
+            <div className="control-group">
+              <label>Farbe:</label>
+              <input
+                type="color"
+                value={selectedColor}
+                onChange={(e) => setSelectedColor(e.target.value)}
+              />
+            </div>
+            
+            <div className="control-group">
+              <label>Effekt:</label>
+              <select 
+                value={selectedEffect} 
+                onChange={(e) => setSelectedEffect(e.target.value)}
+              >
+                <option value="solid">Vollfarbe</option>
+                <option value="pulse">Pulsieren</option>
+                <option value="strobe">Stroboskop</option>
+                <option value="rainbow">Regenbogen</option>
+                <option value="fade">Verblassen</option>
+              </select>
+            </div>
+
+            <div className="control-group">
+              <label>Intensität: {Math.round(intensity * 100)}%</label>
+              <input
+                type="range"
+                min="0.1"
+                max="1"
+                step="0.1"
+                value={intensity}
+                onChange={(e) => setIntensity(parseFloat(e.target.value))}
+              />
+            </div>
+
+            <div className="control-group">
+              <label>Geschwindigkeit: {speed}x</label>
+              <input
+                type="range"
+                min="0.1"
+                max="3"
+                step="0.1"
+                value={speed}
+                onChange={(e) => setSpeed(parseFloat(e.target.value))}
+              />
+            </div>
+
+            <button className="send-command-btn" onClick={() => sendLightCommand()}>
+              Lichteffekt Senden
+            </button>
+          </div>
+        </div>
+
+        {/* Quick Effects */}
+        <div className="control-section">
+          <h3>Schnell-Effekte</h3>
+          <div className="quick-effects">
+            <button onClick={() => sendLightCommand('rainbow')}>
+              🌈 Regenbogen
+            </button>
+            <button onClick={() => sendLightCommand('pulse')}>
+              💓 Puls-Beat
+            </button>
+            <button onClick={() => sendLightCommand('strobe')}>
+              ⚡ Stroboskop
+            </button>
+            <button 
+              onClick={() => {
+                const command = {
+                  type: 'light_command',
+                  data: {
+                    command_type: 'off',
+                    color: '#000000',
+                    effect: 'solid',
+                    intensity: 0,
+                    speed: 1,
+                    section: 'all'
+                  }
+                };
+                wsRef.current.send(JSON.stringify(command));
+              }}
+            >
+              🔴 Aus
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
-}
+};
+
+// Main App Component
+const App = () => {
+  const [mode, setMode] = useState('participant'); // 'participant' or 'admin'
+
+  return (
+    <div className="App">
+      {mode === 'participant' ? (
+        <ParticipantScreen />
+      ) : (
+        <AdminPanel />
+      )}
+      
+      <button 
+        className="mode-switch"
+        onClick={() => setMode(mode === 'participant' ? 'admin' : 'participant')}
+      >
+        {mode === 'participant' ? '🎛️ Admin-Modus' : '📱 Teilnehmer-Modus'}
+      </button>
+    </div>
+  );
+};
 
 export default App;
