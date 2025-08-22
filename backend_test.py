@@ -353,10 +353,11 @@ class FestivalLightSyncTester:
         return True
 
     async def test_participant_websocket(self):
-        """Test participant WebSocket connection"""
+        """Test participant WebSocket connection with sections"""
         try:
-            self.participant_ws = await websockets.connect(WS_PARTICIPANT_URL)
-            self.log_test("Participant WebSocket Connection", True, "Connected successfully")
+            # Test connection to 'all' section
+            self.participant_ws = await websockets.connect(f"{WS_PARTICIPANT_URL}/all")
+            self.log_test("Participant WebSocket Connection (all)", True, "Connected successfully")
             
             # Send heartbeat
             heartbeat_msg = {"type": "heartbeat"}
@@ -379,6 +380,41 @@ class FestivalLightSyncTester:
         except Exception as e:
             self.log_test("Participant WebSocket Connection", False, f"Error: {str(e)}")
             return False
+
+    async def test_section_websocket_connections(self):
+        """Test section-based WebSocket connections"""
+        sections = ["left", "center", "right", "all"]
+        section_connections = {}
+        
+        for section in sections:
+            try:
+                ws_url = f"{WS_PARTICIPANT_URL}/{section}"
+                ws = await websockets.connect(ws_url)
+                section_connections[section] = ws
+                self.log_test(f"Section WebSocket Connection: {section}", True, 
+                            f"Connected to section '{section}'")
+                await asyncio.sleep(0.5)  # Brief pause between connections
+            except Exception as e:
+                self.log_test(f"Section WebSocket Connection: {section}", False, f"Error: {str(e)}")
+                return False
+        
+        # Test section change functionality
+        try:
+            if "all" in section_connections:
+                section_change_msg = {"type": "section_change", "section": "left"}
+                await section_connections["all"].send(json.dumps(section_change_msg))
+                self.log_test("Section Change Message", True, "Section change message sent")
+        except Exception as e:
+            self.log_test("Section Change Message", False, f"Error: {str(e)}")
+        
+        # Clean up section connections
+        for section, ws in section_connections.items():
+            try:
+                await ws.close()
+            except:
+                pass
+                
+        return True
 
     async def test_admin_websocket(self):
         """Test admin WebSocket connection"""
