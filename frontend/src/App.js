@@ -41,19 +41,44 @@ const ParticipantScreen = () => {
       
       wsRef.current.onclose = () => {
         setIsConnected(false);
-        console.log('Disconnected from light sync system');
-        // Reconnect after 3 seconds
-        setTimeout(connectWebSocket, 3000);
+        console.log('Disconnected from light sync system - using polling fallback');
+        // Start polling fallback
+        startPollingFallback();
       };
       
       wsRef.current.onerror = (error) => {
         console.error('WebSocket error:', error);
         setIsConnected(false);
+        // Start polling fallback immediately on error
+        startPollingFallback();
       };
     } catch (error) {
       console.error('Failed to connect WebSocket:', error);
-      setTimeout(connectWebSocket, 3000);
+      startPollingFallback();
     }
+  };
+
+  const startPollingFallback = () => {
+    // Use polling to get latest commands when WebSocket fails
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`${API}/latest-command?timestamp=${Date.now()}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.command) {
+            handleLightCommand({
+              type: 'light_command',
+              data: data.command
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Polling fallback error:', error);
+      }
+    }, 1000); // Poll every second
+    
+    // Store interval ref to clear later
+    wsRef.current = { pollInterval };
   };
 
   const handleLightCommand = (message) => {
