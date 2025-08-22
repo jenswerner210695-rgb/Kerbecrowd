@@ -141,16 +141,24 @@ async def activate_event(event_id: str):
         return {"message": "Event activated"}
     return {"error": "Event not found"}
 
+# Store latest command for polling fallback
+latest_command = None
+
 @api_router.post("/light-command")
 async def send_light_command(command: LightCommand):
     """Admin endpoint to send light commands to all participants"""
+    global latest_command
+    
     command_data = command.dict()
     command_data["timestamp"] = datetime.now(timezone.utc).isoformat()
+    
+    # Store as latest command for polling fallback
+    latest_command = command_data
     
     # Store command in database for history
     await db.light_commands.insert_one(command_data)
     
-    # Send to all participants
+    # Send to all participants via WebSocket (if available)
     await manager.send_to_participants({
         "type": "light_command",
         "data": command_data
@@ -164,6 +172,30 @@ async def send_light_command(command: LightCommand):
     })
     
     return {"message": "Command sent", "participant_count": manager.get_participant_count()}
+
+@api_router.get("/latest-command")
+async def get_latest_command(timestamp: str = None):
+    """Get the latest light command for polling fallback"""
+    global latest_command
+    
+    if latest_command:
+        # Only return command if it's newer than the provided timestamp
+        if timestamp:
+            try:
+                provided_timestamp = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+                command_timestamp = datetime.fromisoformat(latest_command['timestamp'].replace('Z', '+00:00'))
+                
+                if command_timestamp > provided_timestamp:
+                    return {"command": latest_command}
+                else:
+                    return {"command": None}
+            except:
+                # If timestamp parsing fails, return latest command
+                return {"command": latest_command}
+        else:
+            return {"command": latest_command}
+    
+    return {"command": None}
 
 @api_router.get("/stats")
 async def get_stats():
