@@ -223,11 +223,13 @@ metadata:
 test_plan:
   current_focus:
     - "WebSocket real-time communication"
-    - "Light command API endpoints"
-  stuck_tasks: []
+  stuck_tasks:
+    - "WebSocket real-time communication"
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
   - agent: "main"
     message: "Phase 1 complete - Core light sync system implemented. Frontend UI working perfectly, backend needs WebSocket testing. Ready for comprehensive backend testing."
+  - agent: "testing"
+    message: "Backend testing completed. 3/4 major components working perfectly: Light Command API (✅), Event Management (✅), Statistics API (✅). WebSocket communication failing due to Kubernetes ingress configuration issue - needs WebSocket upgrade annotations. Backend code is correct, infrastructure needs fixing."
