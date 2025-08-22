@@ -488,6 +488,53 @@ class FestivalLightSyncTester:
             self.log_test("WebSocket Light Command Broadcast", False, f"Error: {str(e)}")
             return False
 
+    async def test_beat_sync_websocket(self):
+        """Test beat synchronization through WebSocket"""
+        if not self.admin_ws or not self.participant_ws:
+            self.log_test("Beat Sync WebSocket Test", False, "WebSocket connections not established")
+            return False
+            
+        try:
+            # Enable beat sync for the test event
+            if self.test_event_id:
+                response = requests.post(f"{BASE_URL}/events/{self.test_event_id}/beat-sync/true", timeout=10)
+                if response.status_code != 200:
+                    self.log_test("Beat Sync Enable", False, "Could not enable beat sync")
+                    return False
+            
+            # Send beat data
+            beat_data = {
+                "bpm": 140.0,
+                "intensity": 0.9,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            response = requests.post(f"{BASE_URL}/beat-data", json=beat_data, timeout=10)
+            if response.status_code != 200:
+                self.log_test("Beat Sync WebSocket - Send Beat", False, "Could not send beat data")
+                return False
+            
+            # Check if participant receives beat sync command
+            try:
+                response = await asyncio.wait_for(self.participant_ws.recv(), timeout=5.0)
+                response_data = json.loads(response)
+                if response_data.get("type") == "beat_sync":
+                    beat_command = response_data.get("data", {})
+                    self.log_test("Beat Sync WebSocket", True, 
+                                f"Received beat sync: {beat_command.get('bpm')} BPM, intensity: {beat_command.get('intensity')}")
+                    return True
+                else:
+                    self.log_test("Beat Sync WebSocket", False, 
+                                f"Unexpected message type: {response_data.get('type')}")
+                    return False
+            except asyncio.TimeoutError:
+                self.log_test("Beat Sync WebSocket", False, "Beat sync message timeout")
+                return False
+                
+        except Exception as e:
+            self.log_test("Beat Sync WebSocket", False, f"Error: {str(e)}")
+            return False
+
     async def test_websocket_connection_tracking(self):
         """Test WebSocket connection tracking"""
         try:
