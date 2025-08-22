@@ -248,7 +248,11 @@ const AdminPanel = () => {
     connectWebSocket();
     return () => {
       if (wsRef.current) {
-        wsRef.current.close();
+        if (wsRef.current.close && typeof wsRef.current.close === 'function') {
+          wsRef.current.close();
+        } else if (wsRef.current.pollInterval) {
+          clearInterval(wsRef.current.pollInterval);
+        }
       }
     };
   }, []);
