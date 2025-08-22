@@ -267,12 +267,39 @@ const AdminPanel = () => {
       
       wsRef.current.onclose = () => {
         setIsConnected(false);
-        setTimeout(connectWebSocket, 3000);
+        console.log('Admin WebSocket disconnected - using HTTP fallback');
+        startAdminPolling();
+      };
+      
+      wsRef.current.onerror = (error) => {
+        console.error('Admin WebSocket error:', error);
+        setIsConnected(false);
+        startAdminPolling();
       };
     } catch (error) {
       console.error('Admin WebSocket connection failed:', error);
-      setTimeout(connectWebSocket, 3000);
+      startAdminPolling();
     }
+  };
+
+  const startAdminPolling = () => {
+    // Poll stats every 2 seconds for participant count
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`${API}/stats`);
+        if (response.ok) {
+          const stats = await response.json();
+          setParticipantCount(stats.participants);
+          // Set connected if we can get stats
+          setIsConnected(true);
+        }
+      } catch (error) {
+        console.error('Admin polling error:', error);
+        setIsConnected(false);
+      }
+    }, 2000);
+    
+    wsRef.current = { pollInterval };
   };
 
   const sendLightCommand = (overrideEffect = null) => {
