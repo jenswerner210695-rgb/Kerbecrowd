@@ -32,6 +32,10 @@ body {
   position: relative;
 }
 
+.participant-screen.beat-sync-mode {
+  transition: background-color 0.1s ease;
+}
+
 .connection-status {
   position: absolute;
   top: 0;
@@ -79,6 +83,68 @@ body {
 .festival-info p {
   font-size: 1.2rem;
   opacity: 0.9;
+  margin-bottom: 2rem;
+}
+
+/* Section Selection */
+.section-selector {
+  background: rgba(0, 0, 0, 0.7);
+  padding: 20px;
+  border-radius: 15px;
+  backdrop-filter: blur(10px);
+  margin-top: 20px;
+}
+
+.section-selector h3 {
+  font-size: 1.2rem;
+  margin-bottom: 15px;
+  color: #f1f5f9;
+}
+
+.section-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.section-buttons button {
+  padding: 12px 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.section-buttons button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.section-buttons button.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+}
+
+/* Beat Sync Indicator */
+.beat-sync-indicator {
+  background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-weight: bold;
+  animation: pulse-glow 1s ease-in-out infinite alternate;
+  margin-top: 15px;
+}
+
+@keyframes pulse-glow {
+  from {
+    box-shadow: 0 0 20px rgba(255, 107, 107, 0.6);
+  }
+  to {
+    box-shadow: 0 0 30px rgba(78, 205, 196, 0.8);
+  }
 }
 
 @keyframes glow {
@@ -109,7 +175,7 @@ body {
 }
 
 .admin-header h1 {
-  font-size: 2.5rem;
+  font-size: 2.2rem;
   color: #f1f5f9;
 }
 
@@ -136,18 +202,90 @@ body {
   color: white;
 }
 
-.participant-count {
-  background: #3b82f6;
+.section-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.9rem;
+}
+
+.section-stats > div {
+  background: #475569;
+  padding: 5px 10px;
+  border-radius: 10px;
+}
+
+/* Beat Sync Section */
+.beat-sync-section {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+  border: 2px solid #8b5cf6;
+}
+
+.beat-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  align-items: center;
+}
+
+.beat-sync-btn {
+  background: linear-gradient(135deg, #10b981, #059669);
   color: white;
-  padding: 8px 16px;
-  border-radius: 20px;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 25px;
+  font-size: 16px;
   font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.beat-sync-btn.active {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+}
+
+.beat-sync-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(16, 185, 129, 0.4);
+}
+
+.beat-display {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+}
+
+.bpm-display {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #f1f5f9;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.intensity-bar {
+  width: 100%;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.intensity-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #3b82f6, #8b5cf6, #ef4444);
+  transition: width 0.1s ease;
+  border-radius: 10px;
 }
 
 /* Control Sections */
 .control-sections {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 25px;
 }
 
@@ -165,6 +303,17 @@ body {
   font-size: 1.3rem;
   border-bottom: 2px solid #3b82f6;
   padding-bottom: 10px;
+}
+
+/* Section Controls */
+.section-controls select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  background: #334155;
+  color: white;
+  font-size: 16px;
 }
 
 /* Color Presets */
@@ -187,6 +336,30 @@ body {
 .color-preset-btn:hover {
   transform: scale(1.1);
   box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
+}
+
+/* Advanced Effects */
+.advanced-effects {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.advanced-effects button {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  border: none;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.advanced-effects button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(99, 102, 241, 0.4);
 }
 
 /* Custom Controls */
@@ -322,7 +495,7 @@ body {
   }
   
   .admin-header h1 {
-    font-size: 2rem;
+    font-size: 1.8rem;
   }
   
   .control-sections {
@@ -335,6 +508,14 @@ body {
   
   .quick-effects {
     grid-template-columns: 1fr;
+  }
+  
+  .advanced-effects {
+    grid-template-columns: 1fr;
+  }
+  
+  .section-buttons {
+    grid-template-columns: repeat(2, 1fr);
   }
   
   .festival-info h1 {
@@ -358,5 +539,9 @@ body {
   .color-preset-btn {
     width: 50px;
     height: 50px;
+  }
+  
+  .section-buttons {
+    grid-template-columns: 1fr;
   }
 }
