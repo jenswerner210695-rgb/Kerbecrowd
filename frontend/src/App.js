@@ -302,23 +302,36 @@ const AdminPanel = () => {
     wsRef.current = { pollInterval };
   };
 
-  const sendLightCommand = (overrideEffect = null) => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-
+  const sendLightCommand = async (overrideEffect = null) => {
     const command = {
-      type: 'light_command',
-      data: {
-        command_type: 'effect',
-        color: selectedColor,
-        effect: overrideEffect || selectedEffect,
-        intensity: intensity,
-        speed: speed,
-        duration: selectedEffect === 'solid' ? null : 5000,
-        section: 'all'
-      }
+      command_type: 'effect',
+      color: selectedColor,
+      effect: overrideEffect || selectedEffect,
+      intensity: intensity,
+      speed: speed,
+      duration: selectedEffect === 'solid' ? null : 5000,
+      section: 'all'
     };
 
-    wsRef.current.send(JSON.stringify(command));
+    try {
+      // Use HTTP API directly since WebSocket may not work due to infrastructure
+      const response = await fetch(`${API}/light-command`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(command)
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Light command sent successfully:', result);
+      } else {
+        console.error('Failed to send light command');
+      }
+    } catch (error) {
+      console.error('Error sending light command:', error);
+    }
   };
 
   const presetColors = [
