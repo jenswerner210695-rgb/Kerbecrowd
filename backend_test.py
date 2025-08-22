@@ -427,9 +427,10 @@ class FestivalLightSyncTester:
                 response = await asyncio.wait_for(self.admin_ws.recv(), timeout=5.0)
                 response_data = json.loads(response)
                 if response_data.get("type") == "initial_stats":
-                    stats = response_data
+                    stats = response_data.get('section_stats', {})
+                    admin_count = response_data.get('admin_count', 0)
                     self.log_test("Admin WebSocket Initial Stats", True, 
-                                f"Received stats: {stats.get('participant_count', 0)} participants, {stats.get('admin_count', 0)} admins")
+                                f"Received section stats: {stats}, {admin_count} admins")
                 else:
                     self.log_test("Admin WebSocket Initial Stats", False, 
                                 f"Unexpected response: {response_data}")
