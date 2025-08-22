@@ -249,9 +249,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "WebSocket real-time communication with sections"
-    - "Advanced light command API with wave effects"
-    - "Beat synchronization system"
+    - "WebSocket infrastructure configuration"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
